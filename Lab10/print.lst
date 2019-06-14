@@ -1,0 +1,381 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; Print.s
+    2 00000000         ; Student names: change this to your names or look very 
+                       silly
+    3 00000000         ; Last modification date: change this to the last modifi
+                       cation date or look very silly
+    4 00000000         ; Runs on LM4F120 or TM4C123
+    5 00000000         ; EE319K lab 7 device driver for any LCD
+    6 00000000         ;
+    7 00000000         ; As part of Lab 7, students need to implement these LCD
+                       _OutDec and LCD_OutFix
+    8 00000000         ; This driver assumes two low-level LCD functions
+    9 00000000         ; ST7735_OutChar   outputs a single 8-bit ASCII characte
+                       r
+   10 00000000         ; ST7735_OutString outputs a null-terminated string 
+   11 00000000         
+   12 00000000                 IMPORT           ST7735_OutChar
+   13 00000000                 IMPORT           ST7735_OutString
+   14 00000000                 EXPORT           LCD_OutDec
+   15 00000000                 EXPORT           LCD_OutFix
+   16 00000000         
+   17 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   18 00000000                 THUMB
+   19 00000000         
+   20 00000000         ;-----------------------LCD_OutDec----------------------
+                       -
+   21 00000000         ; Output a 32-bit number in unsigned decimal format
+   22 00000000         ; Input: R0 (call by value) 32-bit unsigned number
+   23 00000000         ; Output: none
+   24 00000000         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+   25 00000000         LCD_OutDec
+   26 00000000         ;; --UUU-- Complete this (copy from Lab7-8)
+   27 00000000 00000000 
+                       num     EQU              0
+   28 00000000 00000004 
+                       Res     EQU              4
+   29 00000000         
+   30 00000000 B501            PUSH{R0,LR}
+   31 00000002 B082            SUB              SP, #8      ;Set up stack for n
+                                                            um and res
+   32 00000004 9000            STR              R0,[SP,#num]
+   33 00000006         
+   34 00000006 280A            CMP              R0,#10      ;Compare the input 
+                                                            with 10
+   35 00000008 D204            BHS              skipper     ;If greater than 10
+                                                             then don't print
+   36 0000000A F100 0030       ADD              R0,#0X30
+   37 0000000E F7FF FFFE       BL               ST7735_OutChar ;Print number th
+                                                            at is less than 10
+   38 00000012 E010            B                leave
+   39 00000014 F04F 030A 
+                       skipper MOV              R3,#10
+   40 00000018 FBB0 F0F3       UDIV             R0,R0,R3    ;R0 gets the quotie
+                                                            nt
+   41 0000001C         ;MOV R3,#10
+   42 0000001C 9A00            LDR              R2,[SP,#num] ;R2 gets the origi
+                                                            nal number
+   43 0000001E 9000            STR              R0,[SP,#num] 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            ;Store the quotient
+                                                            
+   44 00000020         ;UDIV R0,R2,R3    
+   45 00000020 F000 F80D       BL               Rem
+   46 00000024 9001            STR              R0, [SP,#Res] ;Store the remain
+                                                            der in Res stack
+   47 00000026 9800            LDR              R0,[SP,#num] ;R0 gets the quoti
+                                                            ent
+   48 00000028 F7FF FFFE       BL               LCD_OutDec  ;Recursion
+   49 0000002C 9801            LDR              R0,[SP,#Res]
+   50 0000002E F100 0030       ADD              R0,#0X30
+   51 00000032 F7FF FFFE       BL               ST7735_OutChar ;Print out all n
+                                                            umbers after recurs
+                                                            ive calls
+   52 00000036 B002    leave   ADD              SP,#8
+   53 00000038 E8BD 4001       POP{R0,LR}
+   54 0000003C 4770            BX               LR
+   55 0000003E         
+   56 0000003E         Rem
+   57 0000003E FB00 F003       MUL              R0, R0,R3   ;Multiply quotient 
+                                                            and divisor
+   58 00000042 EBA2 0000       SUB              R0,R2,R0    ;Subtract dividend 
+                                                            by the product to f
+                                                            ind remainder
+   59 00000046 4770            BX               LR
+   60 00000048         
+   61 00000048         ;* * * * * * * * End of LCD_OutDec * * * * * * * *
+   62 00000048         
+   63 00000048         ; -----------------------LCD _OutFix--------------------
+                       --
+   64 00000048         ; Output characters to LCD display in fixed-point format
+                       
+   65 00000048         ; unsigned decimal, resolution 0.001, range 0.000 to 9.9
+                       99
+   66 00000048         ; Inputs:  R0 is an unsigned 32-bit number
+   67 00000048         ; Outputs: none
+   68 00000048         ; E.g., R0=0,    then output "0.000 "
+   69 00000048         ;       R0=3,    then output "0.003 "
+   70 00000048         ;       R0=89,   then output "0.089 "
+   71 00000048         ;       R0=123,  then output "0.123 "
+   72 00000048         ;       R0=9999, then output "9.999 "
+   73 00000048         ;       R0>9999, then output "*.*** "
+   74 00000048         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+   75 00000048         LCD_OutFix
+   76 00000048         ;; --UUU-- Complete this (copy from Lab7-8)
+   77 00000048 B501            PUSH{R0,LR}
+   78 0000004A         
+   79 0000004A B082            SUB              SP, #8      ;Set up stack point
+                                                            er
+   80 0000004C 9001            STR              R0,[SP, #Res]
+   81 0000004E         
+   82 0000004E         
+   83 0000004E         
+   84 0000004E 9801            LDR              R0, [SP,#Res]
+   85 00000050 F242 730F       MOV              R3, #9999
+   86 00000054 4298            CMP              R0, R3      ;Compare the input 
+                                                            to see if its too b
+                                                            ig
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   87 00000056 D837            BHI              tooBig
+   88 00000058 F44F 737A       MOV              R3,#1000
+   89 0000005C FBB0 F0F3       UDIV             R0,R0,R3    ;R0 gets the quotie
+                                                            nt
+   90 00000060 9000            STR              R0, [SP,#num] ;Store the quotie
+                                                            nt for 1000 into nu
+                                                            m
+   91 00000062 F100 0030       ADD              R0,#0X30
+   92 00000066 F7FF FFFE       BL               ST7735_OutChar 
+                                                            ;print out quotient
+                                                            
+   93 0000006A F04F 002E       MOV              R0, #0X2E
+   94 0000006E F7FF FFFE       BL               ST7735_OutChar 
+                                                            ;print out period
+   95 00000072 9800            LDR              R0,[SP,#num]
+   96 00000074 9A01            LDR              R2, [SP,#Res]
+   97 00000076 F44F 737A       MOV              R3,#1000
+   98 0000007A F7FF FFE0       BL               Rem         ;R0 has remainder
+   99 0000007E         
+  100 0000007E F04F 0364       MOV              R3,#100
+  101 00000082 9001            STR              R0, [SP,#Res] ;Remainder is sto
+                                                            red in Res
+  102 00000084 FBB0 F0F3       UDIV             R0,R0, R3
+  103 00000088 9000            STR              R0, [SP,#num] ;quotient for 100
+                                                             is stored in num
+  104 0000008A F100 0030       ADD              R0,#0X30
+  105 0000008E F7FF FFFE       BL               ST7735_OutChar 
+                                                            ;print out quotient
+                                                            
+  106 00000092 9800            LDR              R0,[SP,#num]
+  107 00000094 9A01            LDR              R2, [SP,#Res] ;R2 gets the prev
+                                                            ious quotient
+  108 00000096 F04F 0364       MOV              R3,#100
+  109 0000009A F7FF FFD0       BL               Rem
+  110 0000009E         
+  111 0000009E F04F 030A       MOV              R3,#10
+  112 000000A2 9001            STR              R0, [SP,#Res]
+  113 000000A4 FBB0 F0F3       UDIV             R0,R0, R3   ;R0 gets the quotie
+                                                            nt when divided by 
+                                                            10
+  114 000000A8 9000            STR              R0, [SP,#num]
+  115 000000AA F100 0030       ADD              R0,#0X30
+  116 000000AE F7FF FFFE       BL               ST7735_OutChar ;print out the q
+                                                            uotient
+  117 000000B2 9800            LDR              R0,[SP,#num]
+  118 000000B4 9A01            LDR              R2, [SP,#Res]
+  119 000000B6 F04F 030A       MOV              R3,#10
+  120 000000BA F7FF FFC0       BL               Rem         ;find the remainder
+                                                            
+  121 000000BE F100 0030       ADD              R0,#0X30
+  122 000000C2 F7FF FFFE       BL               ST7735_OutChar ;print out the r
+                                                            emainder
+  123 000000C6 E013            B                escape
+  124 000000C8         tooBig
+  125 000000C8 F04F 002A       MOV              R0, #0X2A   ;print out the star
+                                                            s if greater than 9
+                                                            999
+  126 000000CC F7FF FFFE       BL               ST7735_OutChar
+  127 000000D0 F04F 002E       MOV              R0, #0X2E
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  128 000000D4 F7FF FFFE       BL               ST7735_OutChar
+  129 000000D8 F04F 002A       MOV              R0, #0X2A
+  130 000000DC F7FF FFFE       BL               ST7735_OutChar
+  131 000000E0 F04F 002A       MOV              R0, #0X2A
+  132 000000E4 F7FF FFFE       BL               ST7735_OutChar
+  133 000000E8 F04F 002A       MOV              R0, #0X2A
+  134 000000EC F7FF FFFE       BL               ST7735_OutChar
+  135 000000F0         
+  136 000000F0 9800    escape  LDR              R0, [SP,#num]
+  137 000000F2 B002            ADD              SP,#8
+  138 000000F4 E8BD 4001       POP{R0,LR}
+  139 000000F8 4770            BX               LR
+  140 000000FA         ;* * * * * * * * End of LCD_OutFix * * * * * * * *
+  141 000000FA         
+  142 000000FA 00 00           ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  143 000000FC                 END                          ; end of file
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4 --apcs=interw
+ork --depend=.\print.d -o.\print.o -I.\RTE\_SpaceInvaders -IC:\Keil_v5\ARM\PACK
+\ARM\CMSIS\5.5.1\CMSIS\Core\Include -IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\D
+evice\Include\TM4C123 --predefine="__UVISION_VERSION SETA 526" --predefine="_RT
+E_ SETA 1" --predefine="TM4C123GH6PM SETA 1" --list=.\print.lst Print.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 17 in file Print.s
+   Uses
+      None
+Comment: .text unused
+LCD_OutDec 00000000
+
+Symbol: LCD_OutDec
+   Definitions
+      At line 25 in file Print.s
+   Uses
+      At line 14 in file Print.s
+      At line 48 in file Print.s
+
+LCD_OutFix 00000048
+
+Symbol: LCD_OutFix
+   Definitions
+      At line 75 in file Print.s
+   Uses
+      At line 15 in file Print.s
+Comment: LCD_OutFix used once
+Rem 0000003E
+
+Symbol: Rem
+   Definitions
+      At line 56 in file Print.s
+   Uses
+      At line 45 in file Print.s
+      At line 98 in file Print.s
+      At line 109 in file Print.s
+      At line 120 in file Print.s
+
+escape 000000F0
+
+Symbol: escape
+   Definitions
+      At line 136 in file Print.s
+   Uses
+      At line 123 in file Print.s
+Comment: escape used once
+leave 00000036
+
+Symbol: leave
+   Definitions
+      At line 52 in file Print.s
+   Uses
+      At line 38 in file Print.s
+Comment: leave used once
+skipper 00000014
+
+Symbol: skipper
+   Definitions
+      At line 39 in file Print.s
+   Uses
+      At line 35 in file Print.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Comment: skipper used once
+tooBig 000000C8
+
+Symbol: tooBig
+   Definitions
+      At line 124 in file Print.s
+   Uses
+      At line 87 in file Print.s
+Comment: tooBig used once
+8 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+Res 00000004
+
+Symbol: Res
+   Definitions
+      At line 28 in file Print.s
+   Uses
+      At line 46 in file Print.s
+      At line 49 in file Print.s
+      At line 80 in file Print.s
+      At line 84 in file Print.s
+      At line 96 in file Print.s
+      At line 101 in file Print.s
+      At line 107 in file Print.s
+      At line 112 in file Print.s
+      At line 118 in file Print.s
+
+num 00000000
+
+Symbol: num
+   Definitions
+      At line 27 in file Print.s
+   Uses
+      At line 32 in file Print.s
+      At line 42 in file Print.s
+      At line 43 in file Print.s
+      At line 47 in file Print.s
+      At line 90 in file Print.s
+      At line 95 in file Print.s
+      At line 103 in file Print.s
+      At line 106 in file Print.s
+      At line 114 in file Print.s
+      At line 117 in file Print.s
+      At line 136 in file Print.s
+
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+ST7735_OutChar 00000000
+
+Symbol: ST7735_OutChar
+   Definitions
+      At line 12 in file Print.s
+   Uses
+      At line 37 in file Print.s
+      At line 51 in file Print.s
+      At line 92 in file Print.s
+      At line 94 in file Print.s
+      At line 105 in file Print.s
+      At line 116 in file Print.s
+      At line 122 in file Print.s
+      At line 126 in file Print.s
+      At line 128 in file Print.s
+      At line 130 in file Print.s
+      At line 132 in file Print.s
+      At line 134 in file Print.s
+
+ST7735_OutString 00000000
+
+Symbol: ST7735_OutString
+   Definitions
+      At line 13 in file Print.s
+   Uses
+      None
+Comment: ST7735_OutString unused
+2 symbols
+345 symbols in table
